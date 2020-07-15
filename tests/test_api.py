@@ -20,13 +20,17 @@ def client(app):
     """A test client for the app."""
     return app.test_client()
 
-def test_post_poll(client):
-    """Check when creating a poll."""
-
+@pytest.fixture
+def poll_data():
     data = {
         'poll_description': 'This is the question',
         'options': ['First Option', 'Second Option', 'Third Option']
     }
+
+    return data
+
+def test_post_poll(client, poll_data):
+    """Check when creating a poll."""
 
     # Cannot create a poll without description
     response = client.post('/poll', json={})
@@ -41,7 +45,28 @@ def test_post_poll(client):
     assert response.status_code == 400
 
     # Poll have been created
-    response = client.post('/poll', json=data)
+    response = client.post('/poll', json=poll_data)
     assert response.status_code == 201
     assert response.is_json
     assert 'poll_id' in response.json
+
+def test_get_poll(client, poll_data):
+    """Check when finding a poll."""
+
+    # Responds 404 when not found
+    response = client.get('/poll/1')
+    assert response.status_code == 404
+    assert response.get_data(as_text=True) == 'Poll was not found\n'
+
+    # Respond 200 with a JSON when found
+    client.post('/poll', json=poll_data)
+    response = client.get('/poll/1')
+    assert response.status_code == 200
+    assert response.mimetype == 'application/json'
+
+    # Check JSON structure
+    json = response.json
+    assert 'poll_id' in json
+    assert 'poll_description' in json
+    assert 'options' in json
+    assert type(json['options']) is list

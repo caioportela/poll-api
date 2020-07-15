@@ -6,6 +6,28 @@ from api.models.poll_option import PollOption, PollOptionSchema
 
 bp = Blueprint('poll', __name__)
 
+@bp.route('/poll/<poll_id>', methods=['GET'])
+def poll_info(poll_id):
+    """Return info about the given poll."""
+
+    db_session = get_db()
+    poll_schema = PollSchema()
+
+    poll = Poll.query.get(poll_id)
+
+    # Check if poll was found
+    if poll is None:
+        abort(404, description='Poll was not found')
+
+    # Add the number of views
+    poll.views += 1
+    db_session.commit()
+
+    # Serialize Poll
+    poll = poll_schema.dump(poll)
+
+    return jsonify(poll)
+
 @bp.route('/poll', methods=['POST'])
 def post_poll():
     """Insert a Poll and its options."""
