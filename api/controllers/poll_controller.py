@@ -75,3 +75,21 @@ def poll_stats(poll_id):
     }
 
     return jsonify(stats)
+    
+@bp.route('/poll/<option_id>/vote', methods=['POST'])
+def compute_vote(option_id):
+    """Compute a vote for the given option."""
+
+    db_session = get_db()
+
+    option = PollOption.query.get(option_id)
+
+    # Check if option exists
+    if option is None:
+        abort(404, description='Poll option was not found')
+
+    # Add a vote for the option
+    option.votes += 1
+    db_session.commit()
+
+    return jsonify({'option_id':option.id})

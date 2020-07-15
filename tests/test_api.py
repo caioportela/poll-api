@@ -99,3 +99,34 @@ def test_stats_poll(client, poll_data):
     assert response.status_code == 200
     assert response.is_json
     assert response.json['views'] == 1
+
+def test_vote_option(client, poll_data):
+    """Check when registering a vote."""
+
+    # Responds 404 when not found
+    response = client.post('/poll/1/vote')
+    assert response.status_code == 404
+    assert response.get_data(as_text=True) == 'Poll option was not found\n'
+
+    # Post a poll for tests
+    client.post('/poll', json=poll_data)
+    response = client.get('poll/1/stats')
+    assert response.status_code == 200
+    assert 'votes' in response.json
+
+    option = response.json['votes'][0]
+    assert option['qty'] == 0
+
+    # Successfully post a vote
+    response = client.post('/poll/1/vote')
+    assert response.status_code == 200
+    assert response.is_json
+    assert 'option_id' in response.json
+
+    # Check if option is increased by 1
+    response = client.get('poll/1/stats')
+    assert response.status_code == 200
+    assert 'votes' in response.json
+
+    option = response.json['votes'][0]
+    assert option['qty'] == 1
