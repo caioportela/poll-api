@@ -1,4 +1,5 @@
 from flask import Flask
+from werkzeug.exceptions import HTTPException
 
 SQLALCHEMY_DATABASE_URL = 'sqlite:///./database.db'
 
@@ -23,4 +24,11 @@ def create_app(test_config=None):
     from api.controllers import poll_controller
     app.register_blueprint(poll_controller.bp)
 
+    # Register exception handler
+    app.register_error_handler(HTTPException, handle_exception)
+
     return app
+
+def handle_exception(e):
+    """Handle exception responses."""
+    return (e.description + '\n', e.code)
