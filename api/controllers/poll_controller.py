@@ -57,3 +57,21 @@ def post_poll():
     db_session.commit()
 
     return (jsonify({"poll_id": poll.id}), 201)
+
+@bp.route('/poll/<poll_id>/stats', methods=['GET'])
+def poll_stats(poll_id):
+    """Return stats of the poll."""
+
+    poll = Poll.query.get(poll_id)
+
+    # Check if poll was found
+    if poll is None:
+        abort(404, description='Poll was not found')
+
+    # Map stats
+    stats = {
+        'views': poll.views,
+        'votes': [{'option_id': option.id, 'qty': option.votes} for option in poll.options]
+    }
+
+    return jsonify(stats)

@@ -58,11 +58,11 @@ def test_get_poll(client, poll_data):
     assert response.status_code == 404
     assert response.get_data(as_text=True) == 'Poll was not found\n'
 
-    # Respond 200 with a JSON when found
+    # Responds 200 with a JSON when found
     client.post('/poll', json=poll_data)
     response = client.get('/poll/1')
     assert response.status_code == 200
-    assert response.mimetype == 'application/json'
+    assert response.is_json
 
     # Check JSON structure
     json = response.json
@@ -70,3 +70,32 @@ def test_get_poll(client, poll_data):
     assert 'poll_description' in json
     assert 'options' in json
     assert type(json['options']) is list
+
+def test_stats_poll(client, poll_data):
+    """Check when requesting stats."""
+
+    # Responds 404 when not found
+    response = client.get('/poll/1/stats')
+    assert response.status_code == 404
+    assert response.get_data(as_text=True) == 'Poll was not found\n'
+
+    # Post a poll for tests
+    client.post('/poll', json=poll_data)
+
+    # Responds 200 with a JSON when found
+    response = client.get('poll/1/stats')
+    assert response.status_code == 200
+    assert response.is_json
+
+    json = response.json
+    assert 'views' in json
+    assert json['views'] == 0
+    assert 'votes' in json
+    assert type(json['votes']) is list
+
+    # Check if views increases with each `GET /poll/:poll_id`
+    client.get('poll/1')
+    response = client.get('poll/1/stats')
+    assert response.status_code == 200
+    assert response.is_json
+    assert response.json['views'] == 1
